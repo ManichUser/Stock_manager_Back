@@ -31,19 +31,40 @@ export const getBrands = async (_: Request, res: Response) => {
 };
 
 export const deleteBrand = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
   try {
-    const id = Number(req.params.id);
+    await prisma.$transaction(async (tx) => {
+      //  Récupérer toutes les pièces liées à la marque
+      const parts = await tx.part.findMany({
+        where: { brandId: Number(id) },
+        select: { id: true },
+      });
 
-    const brandExists = await prisma.brand.findUnique({ where: { id } });
-    if (!brandExists) {
-      return res.status(404).json({ message: "Marque introuvable." });
-    }
+      const partIds = parts.map(p => p.id);
 
-    await prisma.brand.delete({ where: { id } });
-    return res.json({ message: "Marque supprimée avec succès." });
-  } catch (error) {
-    console.error("Erreur lors de la suppression :", error);
-    return res.status(500).json({ message: "Erreur serveur." });
+      //  Supprimer tous les mouvements liés à ces pièces
+      if (partIds.length > 0) {
+        await tx.movement.deleteMany({
+          where: { partId: { in: partIds } },
+        });
+      }
+
+      //  Supprimer toutes les pièces liées à la marque
+      await tx.part.deleteMany({
+        where: { brandId: Number(id) },
+      });
+
+      //  Supprimer la marque
+      await tx.brand.delete({
+        where: { id: Number(id) },
+      });
+    });
+
+    res.status(200).json({ message: "Marque, pièces et mouvements associés supprimés" });
+  } catch (err: any) {
+    console.error("Erreur suppression marque :", err);
+    res.status(400).json({ message: "Erreur lors de la suppression", error: err.message || err });
   }
 };
 

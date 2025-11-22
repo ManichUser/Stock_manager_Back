@@ -78,6 +78,7 @@ export const getMovementsByPart = async (req: Request, res: Response) => {
 };
 
 export const deleteMovement = async (req: Request, res: Response) => {
+  
   try {
     const { id } = req.params;
     await prisma.movement.delete({ where: { id: Number(id) } });
@@ -87,7 +88,15 @@ export const deleteMovement = async (req: Request, res: Response) => {
     res.status(400).json({ error: error.message || "Erreur serveur" });
   }
 };
-
+export const freebd = async (_req: Request, res: Response) => {
+  try {
+    await prisma.movement.deleteMany(); // supprime tous les mouvements
+    res.status(200).json({ message: "Entrées/sorties totalement supprimées" });
+  } catch (err: any) {
+    console.error("Erreur suppression globale :", err.message || err);
+    res.status(400).json({ error: err.message || "Erreur serveur" });
+  }
+};
 export const updateMovement = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

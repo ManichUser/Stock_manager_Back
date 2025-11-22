@@ -19,9 +19,28 @@ export const updatePart = async (req: Request, res: Response) => {
     });
     res.json(part);
 }
+
 export const deletePart = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    await prisma.part.delete({ where: { id: Number(id) } });
-    res.json({ message: "Part deleted" });
-}
+  const { id } = req.params;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Supprimer tous les mouvements liés
+      await tx.movement.deleteMany({
+        where: { partId: Number(id) },
+      });
+
+      // Supprimer la pièce
+      await tx.part.delete({
+        where: { id: Number(id) },
+      });
+    });
+
+    res.status(200).json({ message: "Partie et mouvements associés supprimés" });
+  } catch (err: any) {
+    console.error("Erreur suppression pièce :", err);
+    res.status(400).json({ message: "Erreur lors de la suppression", error: err.message || err });
+  }
+};
+
 

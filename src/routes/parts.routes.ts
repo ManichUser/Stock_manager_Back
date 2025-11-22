@@ -4,9 +4,11 @@ import {Router} from 'express'
 
 const route = Router();
 
-route.post('/part',authMiddleware,createPart);
-route.get('/parts',authMiddleware,getParts);
-route.put('/part/:id',authMiddleware,updatePart);
-route.delete('/part/:id',authMiddleware,deletePart);
+
+route.post('/', authMiddleware, createPart);   // POST /parts
+route.get('/', authMiddleware, getParts);      // GET /parts
+route.put('/part/:id', authMiddleware, updatePart); // PUT /parts/:id
+route.delete('/part/:id', authMiddleware, deletePart); // DELETE /parts/:id
+
 
 export default route;
